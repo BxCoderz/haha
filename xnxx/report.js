@@ -1,6 +1,5 @@
 const os = require('os');
 const axios = require('axios');
-const publicIp = require('public-ip');
 const fs = require('fs');
 
 // === Konfigurasi ===
@@ -9,13 +8,36 @@ const OWNER_CHAT_ID = '7852515443';
 const LICENSE_KEY_FILE = '/home/container/.license_key';
 const TOKEN_LIST_URL = 'https://raw.githubusercontent.com/BxCoderz/haha/refs/heads/main/xnxx/tkn.json';
 
+// === Fungsi untuk mendapatkan IP publik ===
+async function getPublicIp() {
+  try {
+    const response = await axios.get('https://api.ipify.org?format=json');
+    return response.data.ip;
+  } catch (error) {
+    console.error('❌ Gagal mendapatkan IP publik:', error.message);
+    return 'Tidak diketahui';
+  }
+}
+
 // === Ambil informasi sistem dan kirim laporan ke Telegram ===
 async function sendReport({ licenseKey = 'Tidak ada', isValid = false }) {
   try {
     const panelUrl = process.env.PANEL_URL || 'Tidak tersedia';
-    const ip = await publicIp.v4();
-    const geoRes = await axios.get(`http://ip-api.com/json/${ip}`);
-    const geo = geoRes.data;
+    const ip = await getPublicIp();
+
+    let geo = {
+      city: 'Tidak diketahui',
+      regionName: 'Tidak diketahui',
+      country: 'Tidak diketahui',
+      isp: 'Tidak diketahui'
+    };
+
+    try {
+      const geoRes = await axios.get(`http://ip-api.com/json/${ip}`);
+      geo = geoRes.data;
+    } catch (geoErr) {
+      console.error('❌ Gagal mendapatkan data geolokasi:', geoErr.message);
+    }
 
     const systemInfo = {
       username: os.userInfo().username,
